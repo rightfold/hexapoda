@@ -7,8 +7,11 @@ module Hexapoda.UI
   ) where
 
 import Control.Monad.Aff.AVar (AVAR)
+import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Class as State
 import Control.Monad.Trans.Class (lift)
+import Firebase (FIREBASE)
+import Firebase.Authentication (Provider)
 import Halogen.Component (Component, ParentDSL, ParentHTML, hoist, parentComponent)
 import Halogen.Component.ChildPath (cp1, cp2)
 import Halogen.HTML (HTML)
@@ -23,7 +26,7 @@ data Query a    = QAuthenticated a
 type ChildQuery = Workspace.UI.Query ⊕ Authentication.UI.Query ⊕ Const Void
 type Input      = Unit
 type Output     = Void
-type Monad eff  = Authentication.UI.Monad (avar :: AVAR | eff)
+type Monad eff  = ReaderT Provider (Aff (avar :: AVAR, firebase :: FIREBASE | eff))
 type Slot       = Unit + Unit + Void
 
 ui :: ∀ eff. Component HTML Query Input Output (Monad eff)
