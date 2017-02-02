@@ -10,7 +10,7 @@ import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Reader.Class as Reader
 import Control.Monad.Reader.Trans (ReaderT)
 import Firebase (FIREBASE)
-import Firebase.Authentication (Provider, User, signInWithPopup)
+import Firebase.Authentication (Provider, signInWithPopup)
 import Halogen.Component (Component, ComponentDSL, ComponentHTML, component)
 import Halogen.HTML (HTML)
 import Halogen.HTML as H
@@ -21,7 +21,7 @@ import Hexapoda.Prelude
 type State     = Unit
 data Query a   = QAuthenticate a
 type Input     = Unit
-data Output    = OAuthenticated User
+data Output    = OAuthenticated
 type Monad eff = ReaderT Provider (Aff (firebase :: FIREBASE | eff))
 
 ui :: ∀ eff. Component HTML Query Input Output (Monad eff)
@@ -40,6 +40,6 @@ ui = component { initialState
   eval :: Query ~> ComponentDSL State Query Output (Monad eff)
   eval (QAuthenticate next) = do
     provider <- Reader.ask
-    {user} <- liftAff $ signInWithPopup provider
-    raise $ OAuthenticated user
+    liftAff $ signInWithPopup provider
+    raise OAuthenticated
     pure next
