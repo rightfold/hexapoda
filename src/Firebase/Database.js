@@ -1,12 +1,15 @@
 'use strict';
 
-var Control_Monad_Aff = require('../Control.Monad.Aff');
-
-exports.once = function(ref) {
-  return function(onSuccess, onError) {
-    firebase.database().ref(ref).once('value')
-      .then(function(value) { onSuccess(value.val()); })
-      .catch(function(error) { onError(error); });
-    return Control_Monad_Aff.nonCanceler;
+exports.on = function(path) {
+  return function(callback) {
+    return function() {
+      var ref = firebase.database().ref(path);
+      var token = ref.on('value', function(value) {
+        callback(value.val())();
+      });
+      return function() {
+        ref.off('value', token);
+      };
+    };
   };
 };

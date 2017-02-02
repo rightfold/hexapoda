@@ -2,6 +2,7 @@ module Main
   ( main
   ) where
 
+import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Reader.Trans (runReaderT)
 import Firebase (FIREBASE)
 import Firebase.Authentication (Provider, addScope, newGitHubProvider)
@@ -23,5 +24,5 @@ main = do
   runHalogenAff $
     awaitBody >>= runUI (hoist (interpret provider) UI.ui) unit
 
-interpret :: ∀ eff a. Provider -> UI.Monad eff a -> Aff (Effects eff) a
+interpret :: ∀ eff a. Provider -> UI.Monad eff a -> Aff (Effects (avar :: AVAR | eff)) a
 interpret p a = runReaderT a p

@@ -6,6 +6,7 @@ module Hexapoda.UI
   , ui
   ) where
 
+import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.State.Class as State
 import Control.Monad.Trans.Class (lift)
 import Halogen.Component (Component, ParentDSL, ParentHTML, hoist, parentComponent)
@@ -22,7 +23,7 @@ data Query a    = QAuthenticated a
 type ChildQuery = Workspace.UI.Query ⊕ Authentication.UI.Query ⊕ Const Void
 type Input      = Unit
 type Output     = Void
-type Monad eff  = Authentication.UI.Monad eff
+type Monad eff  = Authentication.UI.Monad (avar :: AVAR | eff)
 type Slot       = Unit + Unit + Void
 
 ui :: ∀ eff. Component HTML Query Input Output (Monad eff)

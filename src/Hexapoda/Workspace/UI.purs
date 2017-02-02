@@ -6,10 +6,9 @@ module Hexapoda.Workspace.UI
   , ui
   ) where
 
-import Control.Monad.Aff.Class (liftAff)
+import Control.Monad.Aff.AVar (AVAR)
+import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Exception (error)
-import Control.Monad.Error.Class (throwError)
 import Control.Monad.State.Class as State
 import Data.Argonaut.Core as JSON
 import Data.StrMap as StrMap
@@ -19,14 +18,15 @@ import Firebase.Database as FBD
 import Halogen.Component (Component, ComponentDSL, ComponentHTML, lifecycleComponent)
 import Halogen.HTML (HTML)
 import Halogen.HTML as H
-import Halogen.Query (action)
+import Halogen.Query (action, subscribe)
+import Halogen.Query.EventSource (EventSource, SubscribeStatus(..), eventSource')
 import Hexapoda.Prelude
 
 type State     = Array String
-data Query a   = Initialize a
+data Query a   = Initialize a | Update (Array String) a
 type Input     = Unit
 type Output    = Void
-type Monad eff = Aff (firebase :: FIREBASE | eff)
+type Monad eff = Aff (avar :: AVAR, firebase :: FIREBASE | eff)
 
 ui :: ∀ eff. Component HTML Query Input Output (Monad eff)
 ui = lifecycleComponent { initialState
@@ -46,18 +46,25 @@ ui = lifecycleComponent { initialState
 
   eval :: Query ~> ComponentDSL State Query Output (Monad eff)
   eval (Initialize next) = do
-    projects <- liftAff getProjects
+    subscribe $ projectEvents (Just <<< Update `flip` Listening)
+    pure next
+  eval (Update projects next) = do
     State.put projects
     pure next
 
-
-getProjects :: ∀ eff. Aff (firebase :: FIREBASE | eff) (Array String)
-getProjects = do
+projectEvents
+  :: ∀ eff m f
+   . (MonadAff (avar :: AVAR, firebase :: FIREBASE | eff) m)
+  => (Array String -> Maybe (f SubscribeStatus))
+  -> EventSource f m
+projectEvents handle = eventSource' attach handle
+  where
+  attach k = do
     userID <- liftEff FBA.currentUser
-              >>= maybe (throwError (error "not authenticated"))
-                        (pure <<< FBA.userID)
-    projects <- FBD.once ("users/" <> userID <> "/projects")
-                <#> JSON.toObject
-                <#> map StrMap.keys
-                >>= maybe (throwError (error "bad structure")) pure
-    pure projects
+              <#> maybe "nil" FBA.userID
+    FBD.on ("users/" <> userID <> "/projects") \value ->
+      pure value
+      <#> JSON.toObject
+      <#> map StrMap.keys
+      <#> fromMaybe []
+      >>= k

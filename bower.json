@@ -10,7 +10,6 @@
     "purescript-functors": "^1.1.0",
     "purescript-const": "^2.0.0",
     "purescript-either": "^2.1.0",
-    "purescript-exceptions": "^2.0.0",
     "purescript-maps": "^2.1.1"
   }
 }

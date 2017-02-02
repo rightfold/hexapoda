@@ -13,7 +13,7 @@ import Control.Monad.Eff (Eff)
 import Data.Const (Const)
 import Data.Either (Either)
 import Data.Functor.Coproduct (Coproduct)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Prelude
 
 infixr 6 type Either as +
